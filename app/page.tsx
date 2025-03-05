@@ -28,7 +28,7 @@ import { toast } from "sonner";
 
 export default function Home() {
   // States for managing the uploaded file and its URL
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [_, setUploadedFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   // States for managing the tabs and analysis

@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
 
     // Get the audio stream
     const stream = await response.getStream();
-    const headers = await response.getHeaders();
 
     // Check if the audio stream is present
     if (!stream) throw new Error("Failed to generate audio stream");

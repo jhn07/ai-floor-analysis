@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from "../ui/card";
 import { Button } from '../ui/button';
 import { Maximize2, X } from 'lucide-react';
 import { useScroll } from '@/hooks/use-scroll';
-
 
 /**
  * Interface for the component props
@@ -68,10 +68,12 @@ export const FloorplanCard = ({ imageUrl, children }: FloorplanCardProps) => {
       <Card className="shadow-card overflow-hidden max-h-[600px] flex flex-col">
         {/* Container with image and expand button */}
         <div className="relative aspect-[3/4] w-full shrink-0 group">
-          <img
+          <Image
             src={imageUrl}
             alt="Floorplan"
             className="object-contain w-full h-full p-1.5"
+            width={1000}
+            height={800}
           />
           {/* Expand button (appears on hover) */}
           <Button
@@ -119,11 +121,13 @@ export const FloorplanCard = ({ imageUrl, children }: FloorplanCardProps) => {
                 <X className="h-4 w-4" />
               </Button>
               {/* Full screen image */}
-              <img
+              <Image
                 src={imageUrl}
                 alt="Floorplan Fullscreen"
                 className="w-full h-full object-contain"
                 onClick={(e) => e.stopPropagation()}
+                width={1000}
+                height={800}
               />
             </motion.div>
           </motion.div>

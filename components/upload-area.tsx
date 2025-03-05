@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { useFileUpload } from "@/hooks/use-file-upload"
 import { AnimatePresence, motion } from "framer-motion"
+import Image from "next/image"
 
 /**
  * Interface for the information about the uploaded file
@@ -68,7 +69,7 @@ export const UploadArea = ({
   // State for upload error
   const [uploadError, setUploadError] = useState<string | null>(null)
   // State for upload success
-  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [_, setUploadSuccess] = useState(false)
   // State for preview URL
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   // State for file info
@@ -229,8 +230,12 @@ export const UploadArea = ({
               : uploadError
                 ? "border-destructive bg-destructive/5"
                 : "border-border hover:border-primary/50 hover:bg-primary/5",
-          (isUploading || isAnalyzing) ? "pointer-events-none" : "cursor-pointer",
-          previewUrl ? "p-4" : "p-8",
+          (isUploading || isAnalyzing)
+            ? "pointer-events-none"
+            : "cursor-pointer",
+          previewUrl
+            ? "p-4"
+            : "p-8",
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -319,7 +324,7 @@ export const UploadArea = ({
               <div className="flex items-start gap-4">
                 <div className="relative w-24 h-24 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
                   {previewUrl ? (
-                    <img src={previewUrl || "/placeholder.svg"} alt="Preview" className="w-full h-full object-cover" />
+                    <Image src={previewUrl || "/placeholder.svg"} alt="Preview" className="w-full h-full object-cover" width={400} height={300} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <FileText className="h-8 w-8 text-muted-foreground" />

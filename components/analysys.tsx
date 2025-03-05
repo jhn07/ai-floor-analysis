@@ -75,7 +75,7 @@ export default function Analysis({ analysis, imageUrl }: AnalysisProps) {
           <CardHeader>
             <CardTitle>Analysis Results</CardTitle>
             <CardDescription>
-              We've analyzed your floorplan and identified the following issues and recommendations.
+              We&apos;ve analyzed your floorplan and identified the following issues and recommendations.
             </CardDescription>
           </CardHeader>
         </Card>
