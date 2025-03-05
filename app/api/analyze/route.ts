@@ -52,7 +52,6 @@ const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
  */
 export async function POST(req: Request) {
   try {
-
     // Check if the request contains multipart/form-data
     if (!req.headers.get("Content-Type")?.includes("multipart/form-data")) {
       return NextResponse.json(
@@ -102,7 +101,6 @@ export async function POST(req: Request) {
     // Create a promise for the analysis
     const parsedAnalysis = await aiAnalyzerService.analyzeImage(imageUrl);
 
-    console.log("Parsed analysis: ", parsedAnalysis);
 
     return NextResponse.json({ parsedAnalysis }, { status: 200 });
   } catch (error) {

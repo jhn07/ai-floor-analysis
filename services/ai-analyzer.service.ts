@@ -17,9 +17,9 @@ if (!process.env.OPENAI_API_KEY) {
  */
 class AiAnalyzerService {
   // Maximum number of retries
-  private readonly MAX_RETRIES = 3;
+  private readonly MAX_RETRIES = 2;
   // Delay between retries
-  private readonly RETRY_DELAY = 1000;
+  private readonly RETRY_DELAY = 500;
 
   constructor(private openai: OpenAI) { }
 
@@ -44,31 +44,41 @@ class AiAnalyzerService {
       const isValidFloorPlan = await this.validateImageAI(imageUrl);
 
       if (!isValidFloorPlan) {
-        return {
-          scores: {
-            lighting: 0,
-            space: 0,
-            flow: 0,
-            accessibility: 0,
-          },
-          recommendations: [],
-        }
+        return this.emptyResponse();
       }
 
 
       // Creating a response from the OpenAI API
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.5-preview",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
             content: `You are an expert in analyzing floor plans. Analyze the floor plan and provide the result in JSON format.
-            Scores should be from 0 to 100.`
+            Scores should be from 0 to 100.
+            
+            {
+              "scores": {
+                "lighting": 0-100,
+                "space": 0-100,
+                "flow": 0-100,
+                "accessibility": 0-100
+              },
+              "recommendations": [
+                {
+                  "area": "string",
+                  "issue": "string",
+                  "suggestion": "string",
+                  "priority": "string"
+                }
+              ]
+            }
+            `
           },
           {
             role: "user",
             content: [
-              { type: "image_url", image_url: { url: imageUrl, detail: "high" } },
+              { type: "image_url", image_url: { url: imageUrl, detail: "auto" } },
               {
                 type: "text",
                 text: `Analyze the floor plan and provide:
@@ -78,43 +88,8 @@ class AiAnalyzerService {
             ],
           },
         ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "floor_plan_analysis",
-            schema: {
-              type: "object",
-              properties: {
-                scores: {
-                  type: "object",
-                  properties: {
-                    lighting: { type: "number", minimum: 0, maximum: 100 },
-                    space: { type: "number", minimum: 0, maximum: 100 },
-                    flow: { type: "number", minimum: 0, maximum: 100 },
-                    accessibility: { type: "number", minimum: 0, maximum: 100 },
-                  },
-                  required: ["lighting", "space", "flow", "accessibility"],
-                },
-                recommendations: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      area: { type: "string" },
-                      issue: { type: "string" },
-                      suggestion: { type: "string" },
-                      priority: { type: "string", enum: ["high", "medium", "low"] },
-                    },
-                    required: ["area", "issue", "suggestion", "priority"],
-                  },
-                },
-              },
-              required: ["scores", "recommendations"],
-              additionalProperties: false,
-            }
-          },
-        },
-        max_tokens: 4000,
+        response_format: { type: "json_object" },
+        max_tokens: 2500,
         temperature: 0.1,
       });
 
@@ -293,6 +268,19 @@ class AiAnalyzerService {
       score >= 0 &&
       score <= 100
     );
+  }
+
+
+  /**
+   * Returns an empty response
+   * 
+   * @returns {FloorPlanAnalysis} The empty response
+   */
+  private emptyResponse(): FloorPlanAnalysis {
+    return {
+      scores: { lighting: 0, space: 0, flow: 0, accessibility: 0 },
+      recommendations: []
+    };
   }
 }
 
