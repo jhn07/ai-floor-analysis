@@ -41,7 +41,7 @@ class ApiService {
   private readonly maxRetries: number;
 
   constructor(config: ApiServiceConfig) {
-    this.baseUrl = config.baseUrl || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+    this.baseUrl = config.baseUrl;
     this.timeout = config.timeout || 30000; // 30 seconds
     this.maxRetries = config.maxRetries || 3; // 3 retries
   }
@@ -340,7 +340,7 @@ class ApiError extends Error {
 
 // Creating and exporting the instance of the service
 export const apiService = new ApiService({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api",
+  baseUrl: "/api",
   timeout: 30000,
   maxRetries: 3,
 });
