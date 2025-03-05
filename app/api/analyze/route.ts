@@ -102,6 +102,8 @@ export async function POST(req: Request) {
     // Create a promise for the analysis
     const parsedAnalysis = await aiAnalyzerService.analyzeImage(imageUrl);
 
+    console.log("Parsed analysis: ", parsedAnalysis);
+
     return NextResponse.json({ parsedAnalysis }, { status: 200 });
   } catch (error) {
     console.error("Error processing request:", {
