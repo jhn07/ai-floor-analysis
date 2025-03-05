@@ -65,11 +65,9 @@ export const UploadArea = ({
   isUploaded = false,
 }: UploadAreaProps) => {
   // State for upload progress
-  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadProgress, setUploadProgress] = useState<number>(0)
   // State for upload error
   const [uploadError, setUploadError] = useState<string | null>(null)
-  // State for upload success
-  const [_, setUploadSuccess] = useState(false)
   // State for preview URL
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   // State for file info
@@ -163,7 +161,6 @@ export const UploadArea = ({
     }))
     setUploadProgress(0)
     setUploadError(null)
-    setUploadSuccess(false)
 
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
