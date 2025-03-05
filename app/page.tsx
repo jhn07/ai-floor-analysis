@@ -71,7 +71,6 @@ export default function Home() {
     const imageUrl = URL.createObjectURL(file);
     setUploadedFile(file);
     setImageUrl(imageUrl);
-    console.log(imageUrl);
     setIsUploaded(true);
 
     try {

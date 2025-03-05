@@ -100,16 +100,7 @@ export async function POST(req: Request) {
     const imageUrl = `data:${file.type};base64,${base64}`;
 
     // Create a promise for the analysis
-    const analysisPromise = aiAnalyzerService.analyzeImage(imageUrl);
-
-    // Create a promise for the timeout (30 seconds)
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("Analysis timeout")), 30000); // 30 seconds
-    });
-
-    // Use Promise.race to handle both the analysis and the timeout
-    // The first promise which resolves wins
-    const parsedAnalysis = await Promise.race([analysisPromise, timeoutPromise]);
+    const parsedAnalysis = await aiAnalyzerService.analyzeImage(imageUrl);
 
     return NextResponse.json({ parsedAnalysis }, { status: 200 });
   } catch (error) {
