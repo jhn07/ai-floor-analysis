@@ -45,7 +45,7 @@ export const RecommendationCard = ({ area, priority, issue, suggestion }: Recomm
    * @returns {string} CSS classes for styling the badge
    */
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
+    switch (priority.toLowerCase()) {
       case "high":
         return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
       case "medium":
