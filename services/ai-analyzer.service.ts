@@ -6,8 +6,6 @@ if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY is not set");
 }
 
-
-
 /**
  * Service for analyzing floor plans using the OpenAI API
  * 
@@ -39,82 +37,94 @@ class AiAnalyzerService {
    */
   async analyzeImage(imageUrl: string, retryCount = 0): Promise<FloorPlanAnalysis> {
     try {
-
-      // Validate the image
-      const isValidFloorPlan = await this.validateImageAI(imageUrl);
-
-      if (!isValidFloorPlan) {
-        return this.emptyResponse();
-      }
-
-
-      // Creating a response from the OpenAI API
+      // ONE SINGLE GPT REQUEST (validation + analysis in 1 step)
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini", // Fast Vision model
         messages: [
           {
             role: "system",
-            content: `You are an expert in analyzing floor plans. Analyze the floor plan and provide the result in JSON format.
-            Scores should be from 0 to 100.
-            
+            content: `
+            You are an expert in analyzing floor plans, architectural drawings, and interior layouts.
+                      
+            Your task:
+                      
+            1) First, determine whether the image is a valid floor plan / architectural layout / interior space.
+                      
+               - If the image is NOT related to rooms, interior spaces, or floor plans → respond ONLY with:
+                      
+                 {
+                   "scores": {
+                     "lighting": 0,
+                     "space": 0,
+                     "flow": 0,
+                     "accessibility": 0
+                   },
+                   "recommendations": []
+                 }
+                      
+            2) If the image IS valid → perform full analysis.
+                      
+            RETURN JSON ONLY IN THIS FORMAT:
+                      
             {
               "scores": {
-                "lighting": 0-100,
-                "space": 0-100,
-                "flow": 0-100,
-                "accessibility": 0-100
+                "lighting": number (0-100),
+                "space": number (0-100),
+                "flow": number (0-100),
+                "accessibility": number (0-100)
               },
               "recommendations": [
                 {
                   "area": "string",
                   "issue": "string",
                   "suggestion": "string",
-                  "priority": "string"
+                  "priority": "low | medium | high"
                 }
               ]
             }
+                      
+            Always return VALID JSON and NOTHING ELSE.
             `
           },
           {
             role: "user",
             content: [
-              { type: "image_url", image_url: { url: imageUrl, detail: "auto" } },
+              {
+                type: "image_url",
+                image_url: { url: imageUrl, detail: "low" }
+              },
               {
                 type: "text",
-                text: `Analyze the floor plan and provide:
-                1. Scores from 0 to 100 for: lighting, space utilization, flow, and accessibility
-                2. Specific recommendations for each room`
-              },
-            ],
-          },
+                text: `
+                Perform the combined validation and analysis as instructed.
+                If not a floor plan/interior, return the EMPTY version.
+                Otherwise, return the full JSON analysis.
+                `
+              }
+            ]
+          }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 2500,
-        temperature: 0.1,
+        max_tokens: 1500,
+        temperature: 0.1
       });
 
-      // Check if the response is received
+      // Check for errors
       if (!response.choices || response.choices.length === 0) {
         throw new Error("No response received from OpenAI");
       }
 
-      // Check the reason for the completion of the generation
       if (response.choices[0].finish_reason === "length") {
         throw new Error("The response is too long. Please try again.");
       }
 
-      // If the response was filtered due to content restrictions
       if (response.choices[0].finish_reason === "content_filter") {
         throw new Error("The response was filtered due to content restrictions");
       }
 
       const content = response.choices[0].message.content;
+      if (!content) throw new Error("Empty response received");
 
-      if (!content) {
-        throw new Error("Empty response received");
-      }
-
-      // Parse the JSON response
       let parsedAnalysis: FloorPlanAnalysis;
       try {
         parsedAnalysis = JSON.parse(content);
@@ -122,87 +132,28 @@ class AiAnalyzerService {
         throw new Error("Invalid JSON response received");
       }
 
-      // Check if the scores are valid
+      // Check the JSON structure
+      if (!parsedAnalysis.scores || !parsedAnalysis.recommendations) {
+        throw new Error("Invalid JSON structure");
+      }
+
+      // Check the range of scores
       if (!this.areaScoreValid(parsedAnalysis.scores)) {
         throw new Error("Scores are outside valid range (0-100)");
       }
 
       return parsedAnalysis;
-
     } catch (error) {
-      // Retry if the error is an OpenAI API error and the status is 429 (rate limit) or 500 (server error)
+      // Retry on certain errors
       if (retryCount < this.MAX_RETRIES && this.shouldRetry(error)) {
         await this.delay(this.RETRY_DELAY * (retryCount + 1));
         return this.analyzeImage(imageUrl, retryCount + 1);
       }
+
       this.loggerError(error);
-      throw error;
+      return this.emptyResponse();
     }
   }
-
-
-  /**
-   * Validates the image using the OpenAI API
-   * - Determines if the image is a floor plan or not
-   * - Returns true if the image is a floor plan, false otherwise
-   * 
-   * @param {string} imageUrl - URL of the image to validate
-   * @returns {Promise<boolean>} True, if the image is a floor plan
-   * 
-   * @throws {Error} Error when the validation fails
-   */
-  private async validateImageAI(imageUrl: string): Promise<boolean> {
-    try {
-      const response = await this.openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `You are an expert in determining the types of images. 
-            Analyze the image and determine if it belongs to one of the following categories:
-            - Room/apartment layout
-            - Architectural plan
-            - Floor plan
-            - Design project of a room
-            - Interior design layout
-            - Building plan
-            - Interior photo of a room or apartment
-            - Interior visualization
-            - 3D-render of a room
-
-            Respond strictly with "true" or "false".
-            Respond with "true" if the image belongs to any of these categories or shows an interior space of a room.
-            Respond with "false" only for images that are completely unrelated to rooms (e.g. landscapes, portraits, animals, etc.).`
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "image_url",
-                image_url: {
-                  url: imageUrl,
-                  detail: "auto"
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 50
-      })
-
-      const result = response.choices[0].message.content;
-
-      if (!result) {
-        throw new Error("Empty response received");
-      }
-
-      return result.includes("true");
-    } catch (error) {
-      this.loggerError(error);
-      throw error;
-    }
-  }
-
 
   /**
    * Checks if the request should be retried given the error
@@ -217,8 +168,6 @@ class AiAnalyzerService {
       : false;
   }
 
-
-
   /**
    * Creates a delay before retrying the request
    * 
@@ -228,8 +177,6 @@ class AiAnalyzerService {
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
-
-
 
   /**
    * Logs errors
@@ -251,10 +198,6 @@ class AiAnalyzerService {
     }
   }
 
-
-
-
-
   /**
    * Checks if the scores are valid
    * 
@@ -269,7 +212,6 @@ class AiAnalyzerService {
       score <= 100
     );
   }
-
 
   /**
    * Returns an empty response
