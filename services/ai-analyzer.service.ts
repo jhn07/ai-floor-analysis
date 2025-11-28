@@ -154,7 +154,7 @@ class AiAnalyzerService {
   private async validateImageAI(imageUrl: string): Promise<boolean> {
     try {
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -181,7 +181,7 @@ class AiAnalyzerService {
                 type: "image_url",
                 image_url: {
                   url: imageUrl,
-                  detail: "high"
+                  detail: "auto"
                 }
               }
             ]
